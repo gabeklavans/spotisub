@@ -15,17 +15,18 @@ from spotisub import spotisub
 from spotisub import database
 from spotisub import constants
 from spotisub import utils
+from spotisub.helpers import spotdl_helper
 from spotisub.exceptions import SubsonicOfflineException
 from spotisub.exceptions import SpotifyApiException
 from spotisub.exceptions import SpotifyDataException
 from spotisub.classes import ComparisonHelper
 from spotisub.helpers import musicbrainz_helper
 
-cache_executor = ThreadPoolExecutor(max_workers=2)
+cache_executor = ThreadPoolExecutor(max_workers=1)
+spotdl_executor = ThreadPoolExecutor(max_workers=1)
 
 if os.environ.get(constants.SPOTDL_ENABLED,
                   constants.SPOTDL_ENABLED_DEFAULT_VALUE) == "1":
-    from spotisub.helpers import spotdl_helper
     logging.warning(
         "You have enabled SPOTDL integration, " +
         "make sure to configure the correct download " +
@@ -82,8 +83,11 @@ def save_spotify_cache_to_file(object):
         pickle.dump(object, f)
 
 
-def get_spotify_object_from_cache(sp, spotify_uri):
+def get_spotify_object_from_cache(sp, spotify_uri, force=False):
     if spotify_uri in spotify_cache:
+        return spotify_cache[spotify_uri]
+    elif force is True:
+        load_spotify_object_to_cache(sp, spotify_uri)
         return spotify_cache[spotify_uri]
     else:
         cache_executor.submit(load_spotify_object_to_cache, sp, spotify_uri)
@@ -271,7 +275,7 @@ def write_playlist(sp, playlist_info, results):
                                 if (os.environ.get(constants.SPOTDL_ENABLED,
                                                    constants.SPOTDL_ENABLED_DEFAULT_VALUE) == "1"
                                         and found is False):
-                                    if "external_urls" in track and "spotify" in track["external_urls"]:
+                                    if "external_urls" in track and track["external_urls"] is not None "spotify" in track["external_urls"] and track["external_urls"]["spotify"] is not None:
                                         is_monitored = True
                                         if (os.environ.get(constants.LIDARR_ENABLED,
                                                            constants.LIDARR_ENABLED_DEFAULT_VALUE) == "1"):
@@ -288,8 +292,7 @@ def write_playlist(sp, playlist_info, results):
                                                 '(%s) This track will be available after ' +
                                                 'navidrome rescans your music dir',
                                                 str(threading.current_thread().ident))
-                                            spotdl_helper.download_track(
-                                                track["external_urls"]["spotify"])
+                                            spotdl_executor.submit(spotdl_helper.download_track, track["external_urls"]["spotify"])
                                         else:
                                             logging.warning(
                                                 '(%s) Track %s - %s not found in your music library',
@@ -858,5 +861,13 @@ def set_ignore(type, uuid, value):
     elif type == 'playlist':
         database.update_ignored_playlist(uuid, value)
 
+def download_song(spotipy_helper, uri):
+    sp = spotipy_helper.get_spotipy_client()
+    track = get_spotify_object_from_cache(sp, uri, force=True)
+    if "external_urls" in track and track["external_urls"] is not None "spotify" in track["external_urls"] and track["external_urls"]["spotify"] is not None:
+        spotdl_executor.submit(spotdl_helper.download_track, track["external_urls"]["spotify"])
+        return True
+    else:
+        return False
 
 spotify_cache = load_spotify_cache_from_file()

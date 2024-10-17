@@ -147,11 +147,33 @@ def reimport_all(uuid=None):
 @login_required
 def reimport(uuid=None):
     """Reimport a playlist"""
-    playlist_info_running = generator.reimport(uuid)
+    playlist_info_running = generator.reimport(uuid)    
     if playlist_info_running is not None:
         type = string.capwords(playlist_info_running.type.replace("_", " "))
         flash('A ' + type + ' import process is already running, please wait for it to finish or restart Spotisub to stop it. You can check the status going to System > Tasks.')
     return redirect(url_for('playlist', uuid=uuid))
+
+@spotisub.route('/download_song/<string:uri>/')
+@login_required
+def download_song(uuid=None):
+    """Reimport a playlist"""
+    spotipy_helper.get_secrets()
+    status = subsonic_helper.download_song(spotipy_helper, uri)
+    if status is False:
+        return get_response_json(
+            get_json_message(
+                "No download url found from Spotify" +
+                uri,
+                False),
+            206)
+    elif status is True:
+        return get_response_json(
+            get_json_message(
+                "Starting download process song with uri:" +
+                uri,
+                True),
+            200)
+    
 
 @spotisub.route('/')
 @spotisub.route('/overview_content/')
@@ -465,8 +487,7 @@ def poll_log():
 
                 if sleep_t:
                     sleep(sleep_t)
-
-
+                        
 @spotisub.route('/ignore/<string:type>/<string:uuid>/<int:value>/')
 @login_required
 def ignore(type=None, uuid=None, value=None):

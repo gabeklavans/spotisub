@@ -196,13 +196,12 @@ def upgrade():
     with dbms.db_engine.connect() as conn:
         fconfig = select_config_by_name(conn, 'VERSION')
         if fconfig is None or fconfig.value not in VERSIONS:
-            # FIRST RELEASE 3.0.0 DROPPING ENTIRE DATABASE
-            # backup_table(conn, SPOTIFY_SONG)
-            # backup_table(conn, SPOTIFY_ALBUM)
-            # backup_table(conn, SPOTIFY_ARTIST)
-            # backup_table(conn, SPOTIFY_SONG_ARTIST_RELATION)
-            # backup_table(conn, SUBSONIC_SPOTIFY_RELATION)
-            # backup_table(conn, PLAYLIST_INFO)
+            backup_table(conn, SPOTIFY_SONG)
+            backup_table(conn, SPOTIFY_ALBUM)
+            backup_table(conn, SPOTIFY_ARTIST)
+            backup_table(conn, SPOTIFY_SONG_ARTIST_RELATION)
+            backup_table(conn, SUBSONIC_SPOTIFY_RELATION)
+            backup_table(conn, PLAYLIST_INFO)
             drop_table(conn, SPOTIFY_SONG)
             drop_table(conn, SPOTIFY_ALBUM)
             drop_table(conn, SPOTIFY_ARTIST)
@@ -217,15 +216,15 @@ def upgrade():
         conn.close()
     if upgraded:
         dbms.metadata.create_all(dbms.db_engine)
-        # with dbms.db_engine.connect() as conn:
-        #    clone_table_from_bak(conn, SPOTIFY_SONG)
-        #    clone_table_from_bak(conn, SPOTIFY_ALBUM)
-        #    clone_table_from_bak(conn, SPOTIFY_ARTIST)
-        #    clone_table_from_bak(conn, SPOTIFY_SONG_ARTIST_RELATION)
-        #    clone_table_from_bak(conn, SUBSONIC_SPOTIFY_RELATION)
-        #    clone_table_from_bak(conn, PLAYLIST_INFO)
-        #    conn.commit()
-        #    conn.close()
+        with dbms.db_engine.connect() as conn:
+            clone_table_from_bak(conn, SPOTIFY_SONG)
+            clone_table_from_bak(conn, SPOTIFY_ALBUM)
+            clone_table_from_bak(conn, SPOTIFY_ARTIST)
+            clone_table_from_bak(conn, SPOTIFY_SONG_ARTIST_RELATION)
+            clone_table_from_bak(conn, SUBSONIC_SPOTIFY_RELATION)
+            clone_table_from_bak(conn, PLAYLIST_INFO)
+            conn.commit()
+            conn.close()
 
 
 def drop_table(conn, table_name):
