@@ -275,7 +275,7 @@ def write_playlist(sp, playlist_info, results):
                                 if (os.environ.get(constants.SPOTDL_ENABLED,
                                                    constants.SPOTDL_ENABLED_DEFAULT_VALUE) == "1"
                                         and found is False):
-                                    if "external_urls" in track and track["external_urls"] is not None "spotify" in track["external_urls"] and track["external_urls"]["spotify"] is not None:
+                                    if "external_urls" in track and track["external_urls"] is not None and "spotify" in track["external_urls"] and track["external_urls"]["spotify"] is not None:
                                         is_monitored = True
                                         if (os.environ.get(constants.LIDARR_ENABLED,
                                                            constants.LIDARR_ENABLED_DEFAULT_VALUE) == "1"):
@@ -864,7 +864,7 @@ def set_ignore(type, uuid, value):
 def download_song(spotipy_helper, uri):
     sp = spotipy_helper.get_spotipy_client()
     track = get_spotify_object_from_cache(sp, uri, force=True)
-    if "external_urls" in track and track["external_urls"] is not None "spotify" in track["external_urls"] and track["external_urls"]["spotify"] is not None:
+    if "external_urls" in track and track["external_urls"] is not None and "spotify" in track["external_urls"] and track["external_urls"]["spotify"] is not None:
         spotdl_executor.submit(spotdl_helper.download_track, track["external_urls"]["spotify"])
         return True
     else:

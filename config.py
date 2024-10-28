@@ -31,3 +31,4 @@ class Config(object):
 
     
     APPLICATION_ROOT = os.environ.get("APPLICATION_ROOT", "")
+    LOGIN_DISABLED = os.environ.get("LOGIN_DISABLED", "0") == "1"
