@@ -18,6 +18,20 @@ musicbrainzngs.set_useragent(
     "0.1",
     "http://example.com/music")
 
+def get_mbids_from_isrc(isrc) -> list:
+    try:
+        res = musicbrainzngs.get_recordings_by_isrc(isrc, includes=["isrcs"])
+        time.sleep(0.25)
+    except BaseException:
+        utils.write_exception()
+        return []
+
+    if "isrc" not in res:
+        return []
+    if "recording-list" not in res["isrc"]:
+        return []
+
+    return list(map(lambda rec: rec["id"], res["isrc"]["recording-list"]))
 
 def get_isrc_by_id(song):
     """get isrc by id"""
