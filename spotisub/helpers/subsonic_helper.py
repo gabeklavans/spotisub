@@ -1,7 +1,6 @@
 """Subsonic helper"""
 import logging
 import os
-import random
 import time
 import pickle
 import threading
@@ -11,15 +10,12 @@ from concurrent.futures import ThreadPoolExecutor
 from expiringdict import ExpiringDict
 from libsonic.errors import DataNotFoundError
 from spotipy.exceptions import SpotifyException
-from spotisub import spotisub
 from spotisub import database
 from spotisub import constants
 from spotisub import utils
 from spotisub.helpers import spotdl_helper
-from spotisub.exceptions import SubsonicOfflineException
-from spotisub.exceptions import SpotifyApiException
-from spotisub.exceptions import SpotifyDataException
-from spotisub.classes import ComparisonHelper
+from spotisub.exceptions import SubsonicDataException, SubsonicOfflineException
+from spotisub.classes import ComparisonHelper, SubsonicCache
 from spotisub.helpers import musicbrainz_helper
 
 cache_executor = ThreadPoolExecutor(max_workers=1)
@@ -58,14 +54,21 @@ pysonic = libsonic.Connection(
             constants.SUBSONIC_API_PORT)))
 
 
-# caches
-playlist_cache = ExpiringDict(max_len=500, max_age_seconds=300)
-spotify_cache = None
+def load_subsonic_cache_from_file() -> SubsonicCache:
+    cache = SubsonicCache(0, {})
+    path = os.path.join(constants.CACHE_DIR, constants.SUBSONIC_CACHE_FILENAME)
+    if os.path.exists(path):
+        if os.stat(path).st_size == 0:
+            os.remove(path)
+        else:
+            with open(path, 'rb') as f:
+                cache = pickle.load(f)
+    return cache
 
 
 def load_spotify_cache_from_file():
     object = ExpiringDict(max_len=10000, max_age_seconds=43200)
-    path = os.path.abspath(os.curdir) + '/cache/spotify_object_cache.pkl'
+    path = os.path.join(constants.CACHE_DIR, constants.SPOTIFY_OBJECT_CACHE_FILENAME)
     if os.path.exists(path):
         if os.stat(path).st_size == 0:
             os.remove(path)
@@ -77,10 +80,16 @@ def load_spotify_cache_from_file():
     return object
 
 
-def save_spotify_cache_to_file(object):
-    path = os.path.abspath(os.curdir) + '/cache/spotify_object_cache.pkl'
+# caches
+playlist_cache = ExpiringDict(max_len=500, max_age_seconds=300)
+spotify_cache = None
+subsonic_cache = load_subsonic_cache_from_file()
+
+
+def save_cache_object_to_file(obj, filename: str):
+    path = os.path.join(constants.CACHE_DIR, filename)
     with open(path, 'wb') as f:
-        pickle.dump(object, f)
+        pickle.dump(obj, f)
 
 
 def get_spotify_object_from_cache(sp, spotify_uri, force=False):
@@ -110,10 +119,82 @@ def load_spotify_object_to_cache(sp, spotify_uri):
             spotify_object = sp.playlist(spotify_uri)
         if spotify_object is not None:
             spotify_cache[spotify_uri] = spotify_object
-            save_spotify_cache_to_file(spotify_cache)
+            save_cache_object_to_file(spotify_cache, constants.SPOTIFY_OBJECT_CACHE_FILENAME)
     except SpotifyException:
         utils.write_exception()
         pass
+
+
+def is_subsonic_cache_stale() -> bool:
+    try:
+        # fetch what should be the last song in the subsonic library, according to the cache
+        subsonic_search = check_pysonic_connection().search2("", songCount=2, songOffset=subsonic_cache.total_song_count - 1, artistCount=0, albumCount=0)
+        if "searchResult2" not in subsonic_search:
+            raise SubsonicDataException(f'({threading.current_thread().ident}) search2 failed for checking subsonic cache.')
+
+        if "song" not in subsonic_search["searchResult2"]:
+            return True
+
+        # the cache count is out of sync with the subsonic library; needs rebuilding
+        if len(subsonic_search["searchResult2"]["song"]) != 1:
+            return True
+    except Exception:
+        utils.write_exception()
+        return True
+
+    return False
+
+
+def build_subsonic_cache() -> SubsonicCache:
+    SONG_COUNT = 500
+    song_offset = 0
+    total_song_count = 0
+    subsonic_songs_dict = {}
+    try:
+        while True:
+            logging.debug(f'Fetching {SONG_COUNT} songs from subsonic library...')
+            subsonic_search = check_pysonic_connection().search2("", songCount=SONG_COUNT, songOffset=song_offset, artistCount=0, albumCount=0)
+            if "searchResult2" not in subsonic_search: # this should probably be an exception
+                break
+
+            if "song" not in subsonic_search["searchResult2"]:
+                # done searching
+                break
+
+            num_retrieved_songs = len(subsonic_search["searchResult2"]["song"]);
+
+            if num_retrieved_songs == 0:
+                # done searching, though this shouldn't get here
+                break
+
+            song_offset += num_retrieved_songs
+
+            if num_retrieved_songs < SONG_COUNT:
+                total_song_count = song_offset
+
+            for song in subsonic_search["searchResult2"]["song"]:
+                if "musicBrainzId" in song:
+                    subsonic_songs_dict[song["musicBrainzId"]] = song 
+    except Exception:
+        utils.write_exception()
+        return SubsonicCache(0, {})
+
+    cache = SubsonicCache(total_song_count, subsonic_songs_dict)
+
+    logging.debug(f'Found {cache.total_song_count} songs and {len(subsonic_songs_dict)} MBIDs in subsonic library.')
+
+    save_cache_object_to_file(cache, constants.SUBSONIC_CACHE_FILENAME)
+
+    return cache
+
+
+def check_and_get_subsonic_cache():
+    if not is_subsonic_cache_stale():
+        return subsonic_cache
+
+    logging.info(f'({threading.current_thread().ident}) subsonic cache is stale, rebuilding...')
+
+    return build_subsonic_cache()
 
 
 def check_pysonic_connection():
@@ -216,40 +297,6 @@ def generate_playlist(playlist_info):
 
 def write_playlist(sp, playlist_info, results):
     """write playlist to subsonic db"""
-    song_offset = 0
-    SONG_COUNT = 500
-    total_song_count = 0
-    subsonic_songs_dict = {}
-    try:
-        while True:
-            logging.info(f'Fetching {SONG_COUNT} songs from subsonic library...')
-            subsonic_search = check_pysonic_connection().search2("", songCount=SONG_COUNT, songOffset=song_offset, artistCount=0, albumCount=0)
-            logging.info(f'Done fetching.')
-            if ("searchResult2" not in subsonic_search 
-                or len(subsonic_search["searchResult2"]) < 1
-                or "song" not in subsonic_search["searchResult2"]):
-                break
-
-            num_retrieved_songs = len(subsonic_search["searchResult2"]["song"]);
-            if num_retrieved_songs == 0:
-                break
-
-            song_offset += num_retrieved_songs
-
-            if num_retrieved_songs < SONG_COUNT:
-                total_song_count = song_offset
-
-            for song in subsonic_search["searchResult2"]["song"]:
-                if "musicBrainzId" in song:
-                    subsonic_songs_dict[song["musicBrainzId"]] = song 
-    except Exception as e:
-        logging.error(
-            '(%s) Error building in-memory database of MBIDs: %s',
-            str(threading.current_thread().ident), e)
-        return 
-
-    logging.info(f'Found {len(subsonic_songs_dict)} songs with an MBID in subsonic library.')
-
     try:
         playlist_info["prefix"] = os.environ.get(
             constants.PLAYLIST_PREFIX,
@@ -280,6 +327,7 @@ def write_playlist(sp, playlist_info, results):
             else:
                 playlist_info["subsonic_playlist_id"] = playlist_id
                 track_helper = []
+                subsonic_cache = check_and_get_subsonic_cache()
                 for track in results['tracks']:
                     track = add_missing_values_to_track(sp, track)
 
@@ -299,7 +347,7 @@ def write_playlist(sp, playlist_info, results):
                         comparison_helper,
                         playlist_info,
                         old_song_ids,
-                        subsonic_songs_dict)
+                        subsonic_cache.song_mbid_dict)
 
                     track = comparison_helper.track
                     artist_spotify = comparison_helper.artist_spotify
@@ -375,7 +423,7 @@ def match_with_subsonic_track(
         comparison_helper, playlist_info, old_song_ids, subsonic_songs_dict):
     """compare spotify track to subsonic one"""
     if not has_isrc(comparison_helper.track):
-        logging.info("no irsc for Spotify track, cancelling")
+        logging.warning(f'({threading.current_thread().ident}) no irsc for Spotify track, cancelling')
         return comparison_helper
 
     album_name = ""
@@ -398,7 +446,7 @@ def match_with_subsonic_track(
             break
 
     if found_song is None:
-        logging.info(f'({threading.current_thread().ident}) Spotify track with mbids {spotify_track_mbids} was not found in subsonic library.')
+        logging.debug(f'({threading.current_thread().ident}) Spotify track with mbids {spotify_track_mbids} was not found in subsonic library.')
 
     elif found_song["id"] in old_song_ids:
         logging.info(

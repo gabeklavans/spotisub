@@ -5,7 +5,6 @@ import logging
 
 import musicbrainzngs
 from musicbrainzngs.musicbrainz import ResponseError
-from spotisub import spotisub
 from spotisub import utils
 
 
@@ -20,6 +19,8 @@ musicbrainzngs.set_useragent(
     "http://example.com/music")
 
 def get_mbids_from_isrc(isrc: str) -> list:
+    isrc = isrc.replace('-', '').upper()
+
     try:
         res = musicbrainzngs.get_recordings_by_isrc(isrc)
         time.sleep(0.25)
@@ -41,23 +42,3 @@ def get_mbids_from_isrc(isrc: str) -> list:
         return []
 
     return list(map(lambda rec: rec["id"], res["isrc"]["recording-list"]))
-
-def get_isrc_by_id(song):
-    """get isrc by id"""
-    try:
-        if ("musicBrainzId" in song
-            and song["musicBrainzId"] is not None
-                and song["musicBrainzId"] != ""):
-            song = musicbrainzngs.get_recording_by_id(
-                song["musicBrainzId"], includes=["isrcs"])
-            time.sleep(1)
-            if (song is not None and "recording" in song
-                and song["recording"] is not None
-                and "isrc-list" in song["recording"]
-                and song["recording"]["isrc-list"] is not None
-                    and len(song["recording"]["isrc-list"])) > 0:
-                return song["recording"]["isrc-list"]
-        return []
-    except BaseException:
-        utils.write_exception()
-        return []

@@ -1,4 +1,7 @@
 """Spotisub constants"""
+import os
+
+
 SPLIT_TOKENS = ["(", "-", "feat"]
 
 
@@ -60,3 +63,9 @@ JOB_ATT_ID = 'artist_top_tracks'
 JOB_MR_ID = 'my_recommendations'
 JOB_UP_ID = 'user_playlists'
 JOB_ST_ID = 'saved_tracks'
+
+
+# Cache constants
+CACHE_DIR = os.path.join(os.path.abspath(os.curdir), 'cache')
+SPOTIFY_OBJECT_CACHE_FILENAME = 'spotify_object_cache.pkl'
+SUBSONIC_CACHE_FILENAME = 'subsonic_cache.pkl'
