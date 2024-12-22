@@ -461,7 +461,7 @@ def match_with_subsonic_track(
     if has_isrc(comparison_helper.track):
         matched_track = get_subsonic_track_via_mbid(comparison_helper, subsonic_tracks_dict)
 
-    if matched_track is None: # TODO: gate this with an env var
+    if matched_track is None and os.environ.get(constants.TEXT_COMAPRE_MATCHING_ENABLED, constants.TEXT_COMAPRE_MATCHING_ENABLED_DEFAULT_VALUE) == "1":
         logging.info(f'({threading.current_thread().ident}) Spotify track {comparison_helper.track["name"]} - {comparison_helper.artist_spotify["name"]} not found via ISRC; searching via string comparison...')
         matched_track = get_subsonic_track_via_string_compare(comparison_helper, subsonic_tracks_dict)
 
