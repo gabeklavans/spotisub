@@ -245,7 +245,8 @@ def artist_top_tracks(uuid):
 
     if os.environ.get(constants.ARTIST_GEN_SCHED,
                       constants.ARTIST_GEN_SCHED_DEFAULT_VALUE) == "0":
-        scheduler.remove_job(id=constants.JOB_ATT_ID)
+        if scheduler.get_job(id=constants.JOB_ATT_ID) is not None:
+            scheduler.remove_job(id=constants.JOB_ATT_ID)
     else:
         artist_names = subsonic_helper.get_artists_array_names()
         if len(artist_names) > 0 and os.environ.get(
@@ -256,13 +257,14 @@ def artist_top_tracks(uuid):
                 constants.JOB_ATT_ID)
             if len(playlist_infos) > 0:
                 playlist_info_rnd = random.choice(playlist_infos)
-                if playlist_info_rnd is not None and playlist_info_rnd.uuid is not None:
+                if playlist_info_rnd is not None and playlist_info_rnd.uuid is not None and scheduler.get_job(id=constants.JOB_ATT_ID) is not None:
                     scheduler.modify_job(
                         args=[playlist_info_rnd.uuid],
                         id=constants.JOB_ATT_ID
                     )
         else:
-            scheduler.remove_job(id=constants.JOB_ATT_ID)
+            if scheduler.get_job(id=constants.JOB_ATT_ID) is not None:
+                scheduler.remove_job(id=constants.JOB_ATT_ID)
 
 
 def show_recommendations_for_artist(uuid):
@@ -309,7 +311,8 @@ def show_recommendations_for_artist_run(uuid):
 
     if os.environ.get(constants.ARTIST_GEN_SCHED,
                       constants.ARTIST_GEN_SCHED_DEFAULT_VALUE) == "0":
-        scheduler.remove_job(id=constants.JOB_AR_ID)
+        if scheduler.get_job(id=constants.JOB_AR_ID) is not None:
+            scheduler.remove_job(id=constants.JOB_AR_ID)
     else:
         artist_names = subsonic_helper.get_artists_array_names()
         if len(artist_names) > 0:
@@ -318,13 +321,14 @@ def show_recommendations_for_artist_run(uuid):
                 constants.JOB_ATT_ID)
             if len(playlist_infos) > 0:
                 playlist_info_rnd = random.choice(playlist_infos)
-                if playlist_info_rnd is not None and playlist_info_rnd.uuid is not None:
+                if playlist_info_rnd is not None and playlist_info_rnd.uuid is not None and scheduler.get_job(id=constants.JOB_AR_ID) is not None:
                     scheduler.modify_job(
                         args=[playlist_info_rnd.uuid],
                         id=constants.JOB_AR_ID
                     )
         else:
-            scheduler.remove_job(id=constants.JOB_AR_ID)
+            if scheduler.get_job(id=constants.JOB_AR_ID) is not None:
+                scheduler.remove_job(id=constants.JOB_AR_ID)
 
 
 def my_recommendations(uuid):
@@ -388,7 +392,8 @@ def my_recommendations_run(uuid):
 
     if os.environ.get(constants.RECOMEND_GEN_SCHED,
                       constants.RECOMEND_GEN_SCHED_DEFAULT_VALUE) == "0":
-        scheduler.remove_job(id=constants.JOB_MR_ID)
+        if scheduler.get_job(id=constants.JOB_MR_ID) is not None:
+            scheduler.remove_job(id=constants.JOB_MR_ID)
     else:
         artist_names = subsonic_helper.get_artists_array_names()
         if len(artist_names) > 0:
@@ -397,13 +402,14 @@ def my_recommendations_run(uuid):
                 constants.JOB_MR_ID)
             if len(playlist_infos) > 0:
                 playlist_info_rnd = random.choice(playlist_infos)
-                if playlist_info_rnd is not None and playlist_info_rnd.uuid is not None:
+                if playlist_info_rnd is not None and playlist_info_rnd.uuid is not None and scheduler.get_job(id=constants.JOB_MR_ID) is not None:
                     scheduler.modify_job(
                         args=[playlist_info_rnd.uuid],
                         id=constants.JOB_MR_ID
                     )
         else:
-            scheduler.remove_job(id=constants.JOB_MR_ID)
+            if scheduler.get_job(id=constants.JOB_MR_ID) is not None:
+                scheduler.remove_job(id=constants.JOB_MR_ID)
 
 
 def get_user_saved_tracks(uuid):
@@ -436,7 +442,8 @@ def get_user_saved_tracks_run(uuid):
 
     if os.environ.get(constants.SAVED_GEN_SCHED,
                       constants.SAVED_GEN_SCHED_DEFAULT_VALUE) == "0":
-        scheduler.remove_job(id=constants.JOB_MR_ID)
+        if scheduler.get_job(id=constants.JOB_ST_ID) is not None:
+            scheduler.remove_job(id=constants.JOB_ST_ID)
 
 
 def get_user_playlists(uuid):
@@ -483,20 +490,22 @@ def get_user_playlists_run(uuid, offset=0):
 
     if os.environ.get(constants.PLAYLIST_GEN_SCHED,
                       constants.PLAYLIST_GEN_SCHED_DEFAULT_VALUE) == "0":
-        scheduler.remove_job(id=constants.JOB_UP_ID)
+        if scheduler.get_job(id=constants.JOB_UP_ID) is not None:
+            scheduler.remove_job(id=constants.JOB_UP_ID)
     else:
         playlist_infos = database.select_playlist_info_by_type(
             constants.JOB_UP_ID)
         if len(playlist_infos) > 0 and os.environ.get(
                 constants.PLAYLIST_GEN_SCHED,
-                constants.PLAYLIST_GEN_SCHED_DEFAULT_VALUE) != "0":
+                constants.PLAYLIST_GEN_SCHED_DEFAULT_VALUE) != "0" and scheduler.get_job(id=constants.JOB_UP_ID) is not None:
             playlist_info = random.choice(playlist_infos)
             scheduler.modify_job(
                 args=[playlist_info.uuid],
                 id=constants.JOB_UP_ID
             )
         else:
-            scheduler.remove_job(id=constants.JOB_UP_ID)
+            if scheduler.get_job(id=constants.JOB_UP_ID) is not None:
+                scheduler.remove_job(id=constants.JOB_UP_ID)
 
 
 def get_user_saved_tracks_playlist(result, offset_tracks=0):
