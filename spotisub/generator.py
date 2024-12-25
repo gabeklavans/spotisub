@@ -148,8 +148,8 @@ def init_artists_recommendations():
 
 
 def init_my_recommendations():
-    if os.environ.get(constants.RECOMEND_GEN_SCHED,
-                      constants.RECOMEND_GEN_SCHED_DEFAULT_VALUE) != "0":
+    if os.environ.get(constants.RECOMMEND_GEN_SCHED,
+                      constants.RECOMMEND_GEN_SCHED_DEFAULT_VALUE) != "0":
         playlist_infos = database.select_playlist_info_by_type(
             constants.JOB_MR_ID)
         if len(playlist_infos) > 0:
@@ -164,8 +164,8 @@ def init_my_recommendations():
                             playlist_info.uuid],
                         hours=int(
                             os.environ.get(
-                                constants.RECOMEND_GEN_SCHED,
-                                constants.RECOMEND_GEN_SCHED_DEFAULT_VALUE)),
+                                constants.RECOMMEND_GEN_SCHED,
+                                constants.RECOMMEND_GEN_SCHED_DEFAULT_VALUE)),
                         id=constants.JOB_MR_ID,
                         replace_existing=True,
                         max_instances=1)
@@ -390,8 +390,8 @@ def my_recommendations_run(uuid):
         subsonic_helper.write_playlist(
             sp, playlist_info, results)
 
-    if os.environ.get(constants.RECOMEND_GEN_SCHED,
-                      constants.RECOMEND_GEN_SCHED_DEFAULT_VALUE) == "0":
+    if os.environ.get(constants.RECOMMEND_GEN_SCHED,
+                      constants.RECOMMEND_GEN_SCHED_DEFAULT_VALUE) == "0":
         if scheduler.get_job(id=constants.JOB_MR_ID) is not None:
             scheduler.remove_job(id=constants.JOB_MR_ID)
     else:
@@ -649,8 +649,8 @@ def reimport(uuid):
             #     my_recommendations,
             #     constants.JOB_MR_ID,
             #     [uuid],
-            #     constants.RECOMEND_GEN_SCHED,
-            #     constants.RECOMEND_GEN_SCHED_DEFAULT_VALUE)
+            #     constants.RECOMMEND_GEN_SCHED,
+            #     constants.RECOMMEND_GEN_SCHED_DEFAULT_VALUE)
             pass
         elif playlist_info.type == constants.JOB_UP_ID:
             run_job_now(
