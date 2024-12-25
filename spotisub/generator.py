@@ -80,8 +80,9 @@ def scan_user_saved_tracks():
 
 def scan_user_playlists(offset=0):
     """get list of user playlists"""
+    REQUEST_LIMIT = 50
     sp = spotipy_helper.get_spotipy_client()
-    playlist_result = sp.current_user_playlists(limit=50, offset=offset)
+    playlist_result = sp.current_user_playlists(limit=REQUEST_LIMIT, offset=offset)
 
     for item in playlist_result['items']:
         if item is not None and item['name'] is not None and item['name'].strip() != '':
@@ -93,7 +94,7 @@ def scan_user_playlists(offset=0):
             subsonic_helper.generate_playlist(playlist_info)
 
     if len(playlist_result['items']) != 0:
-        scan_user_playlists(offset=offset + 50)
+        scan_user_playlists(offset=offset + REQUEST_LIMIT)
     return
 
 
