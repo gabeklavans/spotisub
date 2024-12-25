@@ -623,13 +623,16 @@ def reimport(uuid):
             return playlist_info
     if playlist_info is not None:
         if playlist_info.type == constants.JOB_AR_ID:
-            run_job_now(
-                timedelta_sec,
-                show_recommendations_for_artist,
-                constants.JOB_AR_ID,
-                [uuid],
-                constants.ARTIST_GEN_SCHED,
-                constants.ARTIST_GEN_SCHED_DEFAULT_VALUE)
+            # (Dec 2024) recommendations API is deprecated
+            # https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
+            # run_job_now(
+            #     timedelta_sec,
+            #     show_recommendations_for_artist,
+            #     constants.JOB_AR_ID,
+            #     [uuid],
+            #     constants.ARTIST_GEN_SCHED,
+            #     constants.ARTIST_GEN_SCHED_DEFAULT_VALUE)
+            pass
         elif playlist_info.type == constants.JOB_ATT_ID:
             run_job_now(
                 timedelta_sec,
@@ -639,13 +642,16 @@ def reimport(uuid):
                 constants.ARTIST_TOP_GEN_SCHED,
                 constants.ARTIST_TOP_GEN_SCHED_DEFAULT_VALUE)
         elif playlist_info.type == constants.JOB_MR_ID:
-            run_job_now(
-                timedelta_sec,
-                my_recommendations,
-                constants.JOB_MR_ID,
-                [uuid],
-                constants.RECOMEND_GEN_SCHED,
-                constants.RECOMEND_GEN_SCHED_DEFAULT_VALUE)
+            # (Dec 2024) recommendations API is deprecated
+            # https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
+            # run_job_now(
+            #     timedelta_sec,
+            #     my_recommendations,
+            #     constants.JOB_MR_ID,
+            #     [uuid],
+            #     constants.RECOMEND_GEN_SCHED,
+            #     constants.RECOMEND_GEN_SCHED_DEFAULT_VALUE)
+            pass
         elif playlist_info.type == constants.JOB_UP_ID:
             run_job_now(
                 timedelta_sec,
@@ -744,8 +750,10 @@ def run_job_now(
 def init_jobs():
     """Used to initialize Spotisub Jobs"""
     init_user_saved_tracks()
-    init_my_recommendations()
-    init_artists_recommendations()
+    # (Dec 2024) recommendations API is deprecated
+    # https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
+    # init_my_recommendations()
+    # init_artists_recommendations()
     init_artists_top_tracks()
     init_user_playlists()
 
@@ -753,8 +761,10 @@ def init_jobs():
 def scan_library():
     """Used to initialize Spotisub Jobs"""
     scan_user_saved_tracks()
-    scan_my_recommendations()
-    scan_artists_recommendations()
+    # (Dec 2024) recommendations API is deprecated
+    # https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
+    # scan_my_recommendations()
+    # scan_artists_recommendations()
     scan_artists_top_tracks()
     scan_user_playlists()
 
@@ -772,9 +782,11 @@ def reimport_all():
 def reimport_all_thread():
     """Used to reimport everything"""
     import_all_user_saved_tracks()
-    import_all_my_recommendations()
+    # (Dec 2024) recommendations API is deprecated
+    # https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
+    # import_all_my_recommendations()
+    # import_all_artists_recommendations()
     import_all_user_playlists()
-    import_all_artists_recommendations()
     import_all_artists_top_tracks()
 
 
