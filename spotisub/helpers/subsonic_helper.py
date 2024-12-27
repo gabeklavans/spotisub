@@ -278,7 +278,7 @@ def add_missing_values_to_track(sp, track):
     if "id" in track:
         uri = 'spotify:track:' + track['id']
         if "album" not in track or not has_isrc(track):
-            spotify_track = get_spotify_object_from_cache(sp, uri, force=True)
+            spotify_track = get_spotify_object_from_cache(sp, uri)
             if spotify_track is not None:
                 track = spotify_track
             time.sleep(0.25)
