@@ -635,7 +635,7 @@ def reimport(uuid):
             #     constants.ARTIST_GEN_SCHED_DEFAULT_VALUE)
             pass
         elif (playlist_info.type == constants.JOB_ATT_ID and 
-              os.environ.get(constants.ARTIST_PLAYLIST_ENABLED, constants.ARTIST_PLAYLIST_ENABLED) == "1"):
+              os.environ.get(constants.ARTIST_PLAYLIST_ENABLED, constants.ARTIST_PLAYLIST_ENABLED_DEFAULT_VALUE) == "1"):
             run_job_now(
                 timedelta_sec,
                 artist_top_tracks,
@@ -756,7 +756,7 @@ def init_jobs():
     # https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
     # init_my_recommendations()
     # init_artists_recommendations()
-    if os.environ.get(constants.ARTIST_PLAYLIST_ENABLED, constants.ARTIST_PLAYLIST_ENABLED) == "1":
+    if os.environ.get(constants.ARTIST_PLAYLIST_ENABLED, constants.ARTIST_PLAYLIST_ENABLED_DEFAULT_VALUE) == "1":
         init_artists_top_tracks()
     init_user_playlists()
 
@@ -768,7 +768,7 @@ def scan_library():
     # https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
     # scan_my_recommendations()
     # scan_artists_recommendations()
-    if os.environ.get(constants.ARTIST_PLAYLIST_ENABLED, constants.ARTIST_PLAYLIST_ENABLED) == "1":
+    if os.environ.get(constants.ARTIST_PLAYLIST_ENABLED, constants.ARTIST_PLAYLIST_ENABLED_DEFAULT_VALUE) == "1":
         scan_artists_top_tracks()
     scan_user_playlists()
 
@@ -790,7 +790,7 @@ def reimport_all_thread():
     # https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
     # import_all_my_recommendations()
     # import_all_artists_recommendations()
-    if os.environ.get(constants.ARTIST_PLAYLIST_ENABLED, constants.ARTIST_PLAYLIST_ENABLED) == "1":
+    if os.environ.get(constants.ARTIST_PLAYLIST_ENABLED, constants.ARTIST_PLAYLIST_ENABLED_DEFAULT_VALUE) == "1":
         import_all_artists_top_tracks()
     import_all_user_playlists()
 
